@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:,">
+  <title>Peta Batas Kecamatan - Leaflet & GeoServer</title>
+  
+  <!-- CSS Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+    .legend-box {
+      background: white;
+      padding: 10px 14px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: Arial, sans-serif;
+    }
+    .legend-box h4 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #333;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <!-- JS Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <script>
+    // 1. Inisialisasi Peta (Koordinat sekitar Flores Timur / Adonara)
+    var map = L.map('map').setView([-8.35, 123.15], 10);
+
+    // 2. Tambahkan Basemap OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // 3. Panggil Layer WMS dari GeoServer
+    var batasKecamatan = L.tileLayer.wms('http://localhost:8080/geoserver/pgweb/wms', {
+      layers: 'pgweb:batas_kecamatan',
+      styles: 'batas_kecamatan',
+      format: 'image/png',
+      transparent: true,
+      version: '1.1.0',
+      attribution: 'GeoServer'
+    }).addTo(map);
+
+    // 4. Tambahkan Legenda Otomatis dari GeoServer
+    var legend = L.control({ position: 'bottomright' });
+
+    legend.onAdd = function (map) {
+      var div = L.DomUtil.create('div', 'legend-box');
+      var legendUrl = 'http://localhost:8080/geoserver/pgweb/wms?' +
+                      'REQUEST=GetLegendGraphic&' +
+                      'VERSION=1.0.0&' +
+                      'FORMAT=image/png&' +
+                      'WIDTH=20&HEIGHT=20&' +
+                      'LAYER=pgweb:batas_kecamatan&' +
+                      'STYLE=batas_kecamatan&' +
+                      'LEGEND_OPTIONS=fontAntiAliasing:true;fontSize:12';
+
+      div.innerHTML = '<h4>Batas Kecamatan</h4>' +
+                      '<img src="' + legendUrl + '" alt="Legenda Batas Kecamatan">';
+      
+      // Mencegah peta ikut ter-zoom saat kotak legenda di-scroll
+      L.DomEvent.disableScrollPropagation(div);
+      return div;
+    };
+
+    legend.addTo(map);
+  </script>
+
+</body>
+</html>
